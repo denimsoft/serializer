@@ -24,6 +24,7 @@ class StrategyService extends RootStrategyService
     protected function registerSerializers()
     {
         $this->serializers[] = new ClosureSerializer($this->rootStrategyService);
+        $this->serializers[] = new InternalClassSerializer($this->rootStrategyService);
         $this->serializers[] = new ClassSerializer($this->rootStrategyService);
     }
 

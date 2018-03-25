@@ -31,8 +31,10 @@ class ClosureSerializer extends AbstractSerializer
             $serialized = true;
             $reflector = new ReflectionFunction($value);
             $source = $this->getSource($reflector);
-            $static = &$this->strategyService->serialize($reflector->getStaticVariables());
-            $closureThis = $this->strategyService->serialize($reflector->getClosureThis());
+            $static = $reflector->getStaticVariables();
+            $static = $this->strategyService->serialize($static);
+            $closureThis = $reflector->getClosureThis();
+            $closureThis = $this->strategyService->serialize($closureThis);
 
             $serialized = new SerializedClosure($source, $static, $closureThis);
         }
@@ -57,7 +59,7 @@ class ClosureSerializer extends AbstractSerializer
         if (!$serialized) {
             $serialized = true;
 
-            $unserializer = new class () {
+            $unserializer = new class() {
                 public $source;
                 public $static;
                 public $closureThis;
@@ -73,10 +75,12 @@ class ClosureSerializer extends AbstractSerializer
             };
 
             $unserializer->source = $value->getSource();
-            $unserializer->closureThis = $this->strategyService->unserialize($value->getClosureThis());
+            $closureThis = $value->getClosureThis();
+            $unserializer->closureThis = $this->strategyService->unserialize($closureThis);
 
             // static must be last in case of self-referential static variable
-            $unserializer->static = $this->strategyService->unserialize($value->getStaticVariables());
+            $static = $value->getStaticVariables();
+            $unserializer->static = $this->strategyService->unserialize($static);
 
             $serialized = $unserializer();
         }
@@ -96,7 +100,7 @@ class ClosureSerializer extends AbstractSerializer
         );
 
         $definition = preg_replace('/^.*?function/', 'function', $definition);
-        $definition = preg_replace('/;[ \t\r\n]*$/m', ';', $definition);
+        $definition = preg_replace('/[) \t\r\n]*[;,][ \t\r\n]*$/', ';', $definition);
 
         return $definition;
     }
